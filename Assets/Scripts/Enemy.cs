@@ -2,7 +2,7 @@
 using System;
 using Youregone.HealthSystem;
 
-public class Enemy : MonoBehaviour
+public class Enemy : MonoBehaviour, IDamageable
 {
     public event Action<Enemy> OnDeath;
 
@@ -51,6 +51,11 @@ public class Enemy : MonoBehaviour
     private void OnDisable()
     {
         _healthSystem.OnDeath -= HealthSystem_OnDeath;
+    }
+
+    public void TakeDamage(int damageAmount)
+    {
+        _healthSystem.TakeDamage(damageAmount);
     }
 
     public void RefreshEnemy(Vector2 position)

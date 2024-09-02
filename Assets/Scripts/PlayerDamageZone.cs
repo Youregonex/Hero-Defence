@@ -3,13 +3,13 @@ using System;
 
 public class PlayerDamageZone : MonoBehaviour
 {
-    public event Action OnEnemyEntered;
+    public event Action<Enemy> OnEnemyEntered;
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
         if(collision.TryGetComponent(out Enemy enemy))
         {
-            OnEnemyEntered?.Invoke();
+            OnEnemyEntered?.Invoke(enemy);
         }
     }
 }
