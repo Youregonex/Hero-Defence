@@ -5,6 +5,7 @@ using Youregone.HealthSystem;
 public class Enemy : MonoBehaviour, IDamageable
 {
     public event Action<Enemy> OnDeath;
+    public event Action<Enemy> OnEnemyReachedEnd;
 
     [Header("Enemy Config")]
     [SerializeField] private float _moveSpeed;
@@ -21,7 +22,7 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         if (_isInitialized)
         {
-            Debug.LogError($"Trying to initialize enemy second time! |({gameObject.name})");
+            Debug.LogError($"Trying to initialize enemy second time! | ({gameObject.name})");
             return;
         }
 
@@ -38,14 +39,10 @@ public class Enemy : MonoBehaviour, IDamageable
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        int damage;
-
-        if(collision.TryGetComponent(out Projectile projectile))
-            damage = projectile.Damage;
-        else
-            damage = _healthSystem.CurrentHealth;
-
-        _healthSystem.TakeDamage(damage);
+        if(collision.TryGetComponent(out PlayerDamageZone playerDamageZone))
+        {
+            OnEnemyReachedEnd?.Invoke(this);
+        }
     }
 
     private void OnDisable()
@@ -62,7 +59,7 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         if (!_isInitialized)
         {
-            Debug.LogError($"Trying to refresh non-initialized enemy! |({gameObject.name})");
+            Debug.LogError($"Trying to refresh non-initialized enemy! | ({gameObject.name})");
             return;
         }
 

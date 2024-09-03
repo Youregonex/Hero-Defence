@@ -78,7 +78,7 @@ Rigidbody2D:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 9087688312572780738}
-  m_BodyType: 0
+  m_BodyType: 1
   m_Simulated: 1
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
@@ -210,4 +210,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _fadeInTime: 0.3
+  _fadeFromColor: {r: 1, g: 1, b: 1, a: 0.49019608}
   _spriteRenderer: {fileID: 0}

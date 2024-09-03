@@ -4515,6 +4515,7 @@ GameObject:
   - component: {fileID: 151304205}
   - component: {fileID: 151304208}
   - component: {fileID: 151304209}
+  - component: {fileID: 151304210}
   m_Layer: 8
   m_Name: Player
   m_TagString: Untagged
@@ -4624,6 +4625,28 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 1
   m_Constraints: 4
+--- !u!114 &151304210
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 151304204}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 313984e5a11e040afa26cf6352c046b0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _attackRange: 7.21
+  _attackCooldownMax: 1
+  _enemyLayerMask:
+    serializedVersion: 2
+    m_Bits: 128
+  _projectileDamage: 10
+  _projectileSpeed: 10
+  _attackProjectilePrefab:
+  - {fileID: 1044002252649359436, guid: 41646fb5b9a5c4db195040947d6a403e, type: 3}
+  _projectileParent: {fileID: 1069259650}
 --- !u!1 &212648495
 GameObject:
   m_ObjectHideFlags: 0
@@ -6529,7 +6552,7 @@ SceneRoots:
   - {fileID: 519420032}
   - {fileID: 619394802}
   - {fileID: 151304207}
-  - {fileID: 2066556590}
   - {fileID: 685691380}
-  - {fileID: 680349967}
   - {fileID: 1000679516}
+  - {fileID: 2066556590}
+  - {fileID: 680349967}

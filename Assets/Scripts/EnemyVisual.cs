@@ -5,6 +5,7 @@ public class EnemyVisual : MonoBehaviour
 {
     [Header("Config")]
     [SerializeField] float _fadeInTime = .3f;
+    [SerializeField] Color _fadeFromColor;
 
     [Header("Debug Fields")]
     [SerializeField] private SpriteRenderer _spriteRenderer;
@@ -16,6 +17,6 @@ public class EnemyVisual : MonoBehaviour
 
     private void OnEnable()
     {
-        _spriteRenderer.DOColor(new Color(1, 1, 1, .5f), _fadeInTime).From();
+        _spriteRenderer.DOColor(_fadeFromColor, _fadeInTime).From();
     }
 }
