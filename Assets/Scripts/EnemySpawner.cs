@@ -25,6 +25,7 @@ namespace Youregone.GameplaySystems
         private EnemyFactory _enemyFactory;
         private int _lastSpawnPointIndex;
 
+
         public void Initialize()
         {
             if(_isInitialized)
