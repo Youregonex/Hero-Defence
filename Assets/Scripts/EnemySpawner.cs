@@ -21,10 +21,8 @@ namespace Youregone.GameplaySystems
         [SerializeField] private bool _isInitialized = false;
         [SerializeField] private float _nextEnemySpawnTimer;
 
-        private ObjectPool<Enemy> _enemyPool = new();
-        private EnemyFactory _enemyFactory;
+        private ObjectPool<Enemy> _enemyPool;
         private int _lastSpawnPointIndex;
-
 
         public void Initialize()
         {
@@ -35,7 +33,7 @@ namespace Youregone.GameplaySystems
             }
 
             _isInitialized = true;
-            _enemyFactory = new EnemyFactory(_enemyPrefabList);
+            _enemyPool = new ObjectPool<Enemy>(new EnemyFactory(), _enemyParentPool);
             _nextEnemySpawnTimer = UnityEngine.Random.Range(_enemySpawnTimerMin, _enemySpawnTimerMax);
         }
 
@@ -63,56 +61,54 @@ namespace Youregone.GameplaySystems
             foreach (Enemy enemy in _activeEnemies)
             {
                 enemy.OnDeath -= DespawnEnemy;
-                enemy.OnEnemyReachedEnd -= Enemy_OnEnemyReachedEnd;
+                enemy.OnEndReached -= Enemy_OnEndReached;
             }
         }
 
         private void SpawnEnemy()
         {
-            Enemy enemy;
+            Vector2 enemySpawnPosition = GetNextSpawnPosition();
 
-            if (_enemyPool.IsPoolEmpty())
-            {
-                enemy = _enemyFactory.GetRandomEnemy();
-                enemy.transform.SetParent(_enemyParentPool);
-                ActivateEnemy(enemy, false);
-            }
-            else
-            {
-                enemy = _enemyPool.Get();
-                ActivateEnemy(enemy, true);
-            }
-
+            Enemy enemy = _enemyPool.Get(_enemyPrefabList[0], enemySpawnPosition);
+            ActivateEnemy(enemy, enemySpawnPosition);
             _activeEnemies.Add(enemy);
         }
 
         private void DespawnEnemy(Enemy enemy)
         {
             enemy.OnDeath -= DespawnEnemy;
-            enemy.OnEnemyReachedEnd -= Enemy_OnEnemyReachedEnd;
+            enemy.OnEndReached -= Enemy_OnEndReached;
 
             _activeEnemies.Remove(enemy);
-            _enemyPool.Return(enemy);
+            _enemyPool.Release(enemy);
         }
 
-        private void ActivateEnemy(Enemy enemy, bool enemyInitialized)
+        private void ActivateEnemy(Enemy enemy, Vector2 spawnPosition)
         {
             enemy.OnDeath += DespawnEnemy;
-            enemy.OnEnemyReachedEnd += Enemy_OnEnemyReachedEnd;
+            enemy.OnEndReached += Enemy_OnEndReached;
 
+            if (enemy.IsInitialized)
+                enemy.RefreshEnemy(spawnPosition);
+            else
+                enemy.Initialize(spawnPosition);
+        }
+
+        private Vector2 GetNextSpawnPosition()
+        {
             int currentSpawnPositionIndex = UnityEngine.Random.Range(0, _spawnPositions.Count);
 
-            if(currentSpawnPositionIndex == _lastSpawnPointIndex)
+            if (currentSpawnPositionIndex == _lastSpawnPointIndex)
             {
                 int positionCalculationsAmount = 0;
                 int maxPositionCalculationAmount = 20;
 
-                while(currentSpawnPositionIndex == _lastSpawnPointIndex)
+                while (currentSpawnPositionIndex == _lastSpawnPointIndex)
                 {
                     positionCalculationsAmount++;
                     currentSpawnPositionIndex = UnityEngine.Random.Range(0, _spawnPositions.Count);
 
-                    if(positionCalculationsAmount > maxPositionCalculationAmount)
+                    if (positionCalculationsAmount > maxPositionCalculationAmount)
                     {
                         Debug.LogError($"Enemy spawn position calculation took more {maxPositionCalculationAmount} attempts!");
                         break;
@@ -123,13 +119,10 @@ namespace Youregone.GameplaySystems
             Vector2 enemySpawnPosition = _spawnPositions[currentSpawnPositionIndex].position;
             _lastSpawnPointIndex = currentSpawnPositionIndex;
 
-            if (enemyInitialized)
-                enemy.RefreshEnemy(enemySpawnPosition);
-            else
-                enemy.Initialize(enemySpawnPosition);
+            return enemySpawnPosition;
         }
 
-        private void Enemy_OnEnemyReachedEnd(Enemy enemy)
+        private void Enemy_OnEndReached(Enemy enemy)
         {
             DespawnEnemy(enemy);
         }

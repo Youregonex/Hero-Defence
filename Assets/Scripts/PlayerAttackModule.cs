@@ -16,18 +16,17 @@ namespace Youregone.PlayerComponents
         [Header("Projectile Config")]
         [SerializeField] private int _projectileDamage;
         [SerializeField] private float _projectileSpeed;
-        [SerializeField] private List<Projectile> _attackProjectilePrefab;
+        [SerializeField] private List<Projectile> _attackProjectilePrefabList;
         [SerializeField] private Transform _projectileParent;
 
         private List<Projectile> _activeProjectiles = new();
-        private ObjectPool<Projectile> _projectilePool = new();
-        private ProjectileFactory _projectileFactory;
+        private ObjectPool<Projectile> _projectilePool;
         private float _attackCooldownCurrent;
 
         public void Initialize()
         {
-            _projectileFactory = new ProjectileFactory(_attackProjectilePrefab);
             _attackCooldownCurrent = _attackCooldownMax;
+            _projectilePool = new ObjectPool<Projectile>(new ProjectileFactory(), _projectileParent);
         }
 
         private void Awake()
@@ -62,23 +61,17 @@ namespace Youregone.PlayerComponents
                 return;
 
             Vector2 attackDirectionNormalized = (targetEnemy.transform.position - transform.position).normalized;
+            Projectile projectile = _projectilePool.Get(
+                _attackProjectilePrefabList[0],
+                transform.position,
+                (projectile) => { projectile.transform.position = this.transform.position; });
 
-            Projectile projectile;
-
-            if (_projectilePool.IsPoolEmpty())
-            {
-                projectile = _projectileFactory.GetProjectile();
-                projectile.transform.SetParent(_projectileParent);
-                projectile.Initialize(attackDirectionNormalized, _projectileSpeed, _projectileDamage);
-            }
-            else
-            {
-                projectile = _projectilePool.Get();
+            if (projectile.IsInitialized)
                 projectile.RefreshProjectile(attackDirectionNormalized);
-            }
+            else
+                projectile.Initialize(attackDirectionNormalized, _projectileSpeed, _projectileDamage);
 
             projectile.OnProjectileCollision += Projectile_OnProjectileCollision;
-            projectile.transform.position = transform.position;
             _activeProjectiles.Add(projectile);
         }
 
@@ -87,7 +80,7 @@ namespace Youregone.PlayerComponents
             projectile.OnProjectileCollision -= Projectile_OnProjectileCollision;
             _activeProjectiles.Remove(projectile);
 
-            _projectilePool.Return(projectile);
+            _projectilePool.Release(projectile, (t) => { Debug.Log($"Returned {t.gameObject.name} to pool!"); });
         }
 
         private Enemy FindClosestTarget()

@@ -5,7 +5,7 @@ using Youregone.HealthSystem;
 public class Enemy : MonoBehaviour, IDamageable
 {
     public event Action<Enemy> OnDeath;
-    public event Action<Enemy> OnEnemyReachedEnd;
+    public event Action<Enemy> OnEndReached;
 
     [Header("Enemy Config")]
     [SerializeField] private float _moveSpeed;
@@ -15,8 +15,9 @@ public class Enemy : MonoBehaviour, IDamageable
     [SerializeField] private Rigidbody2D _rigidBody;
 
     private bool _isInitialized = false;
-
     private HealthSystem _healthSystem;
+
+    public bool IsInitialized => _isInitialized;
 
     public void Initialize(Vector2 position)
     {
@@ -41,7 +42,7 @@ public class Enemy : MonoBehaviour, IDamageable
     {
         if(collision.TryGetComponent(out PlayerDamageZone playerDamageZone))
         {
-            OnEnemyReachedEnd?.Invoke(this);
+            OnEndReached?.Invoke(this);
         }
     }
 

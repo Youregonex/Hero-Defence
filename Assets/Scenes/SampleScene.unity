@@ -4644,7 +4644,7 @@ MonoBehaviour:
     m_Bits: 128
   _projectileDamage: 10
   _projectileSpeed: 10
-  _attackProjectilePrefab:
+  _attackProjectilePrefabList:
   - {fileID: 1044002252649359436, guid: 41646fb5b9a5c4db195040947d6a403e, type: 3}
   _projectileParent: {fileID: 1069259650}
 --- !u!1 &212648495

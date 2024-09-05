@@ -16,6 +16,7 @@ public class Projectile : MonoBehaviour
     private Rigidbody2D _rigidbody;
     private bool _isInitialized = false;
 
+    public bool IsInitialized => _isInitialized;
     public int Damage => _damage;
 
     public void Initialize(Vector2 moveDirectionNormalized, float moveSpeed, int damage)
