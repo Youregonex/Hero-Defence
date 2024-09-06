@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System;
 
-public class Projectile : MonoBehaviour
+public class Projectile : MonoBehaviour, IPauseable
 {
     public event Action<Projectile> OnProjectileCollision;
 
@@ -15,6 +15,8 @@ public class Projectile : MonoBehaviour
 
     private Rigidbody2D _rigidbody;
     private bool _isInitialized = false;
+    private bool _isPaused = false;
+    private Vector2 _currentMovementDirection;
 
     public bool IsInitialized => _isInitialized;
     public int Damage => _damage;
@@ -39,6 +41,9 @@ public class Projectile : MonoBehaviour
 
     private void Update()
     {
+        if (_isPaused)
+            return;
+
         if (_projectileLifetimeCurrent > 0)
             _projectileLifetimeCurrent -= Time.deltaTime;
         else
@@ -47,12 +52,24 @@ public class Projectile : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
-        if(collision.transform.TryGetComponent(out Enemy enemy))
+        if(collision.transform.TryGetComponent(out IDamageable damageable))
         {
-            enemy.TakeDamage(_damage);
+            damageable.TakeDamage(_damage);
             OnProjectileCollision?.Invoke(this);
-            Debug.Log("Collided with Enemy");
         }
+    }
+
+    public void Pause()
+    {
+        _isPaused = true;
+        _currentMovementDirection = _rigidbody.velocity;
+        _rigidbody.velocity = Vector2.zero;
+    }
+
+    public void Unpause()
+    {
+        _isPaused = false;
+        _rigidbody.velocity = _currentMovementDirection;
     }
 
     public void RefreshProjectile(Vector2 moveDirectionNormalized)

@@ -1,12 +1,14 @@
-﻿using UnityEngine;
-using System.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Youregone.GameplaySystems;
 using Youregone.ObjectPool;
 using Youregone.Factories;
+using UnityEngine;
+using System.Linq;
+using Zenject;
 
 namespace Youregone.PlayerComponents
 {
-    public class PlayerAttackModule : MonoBehaviour
+    public class PlayerAttackModule : MonoBehaviour, IPauseable
     {
         [Header("Player Attack Config")]
         [SerializeField] private float _attackRange = 2f;
@@ -19,23 +21,31 @@ namespace Youregone.PlayerComponents
         [SerializeField] private List<Projectile> _attackProjectilePrefabList;
         [SerializeField] private Transform _projectileParent;
 
+        private PauseManager _pauseManager;
         private List<Projectile> _activeProjectiles = new();
         private ObjectPool<Projectile> _projectilePool;
         private float _attackCooldownCurrent;
+        private bool _isPaused;
 
-        public void Initialize()
+        [Inject]
+        public void Construct(PauseManager pauseManager)
         {
-            _attackCooldownCurrent = _attackCooldownMax;
-            _projectilePool = new ObjectPool<Projectile>(new ProjectileFactory(), _projectileParent);
+            _pauseManager = pauseManager;
         }
 
         private void Awake()
         {
-            Initialize();
+            _attackCooldownCurrent = _attackCooldownMax;
+            _projectilePool = new ObjectPool<Projectile>(new ProjectileFactory(), _projectileParent);
+
+            _pauseManager.RegisterPausable(this);
         }
 
         private void Update()
         {
+            if (_isPaused)
+                return;
+
             if (_attackCooldownCurrent > 0)
                 _attackCooldownCurrent -= Time.deltaTime;
             else
@@ -53,6 +63,26 @@ namespace Youregone.PlayerComponents
             }
         }
 
+        public void Pause()
+        {
+            _isPaused = true;
+
+            foreach (var projectile in _activeProjectiles)
+            {
+                projectile.Pause();
+            }
+        }
+
+        public void Unpause()
+        {
+            _isPaused = false;
+
+            foreach (var projectile in _activeProjectiles)
+            {
+                projectile.Unpause();
+            }
+        }
+
         private void TryAttack()
         {
             Enemy targetEnemy = FindClosestTarget();
@@ -61,6 +91,7 @@ namespace Youregone.PlayerComponents
                 return;
 
             Vector2 attackDirectionNormalized = (targetEnemy.transform.position - transform.position).normalized;
+
             Projectile projectile = _projectilePool.Get(
                 _attackProjectilePrefabList[0],
                 transform.position,
@@ -80,7 +111,9 @@ namespace Youregone.PlayerComponents
             projectile.OnProjectileCollision -= Projectile_OnProjectileCollision;
             _activeProjectiles.Remove(projectile);
 
-            _projectilePool.Release(projectile, (t) => { Debug.Log($"Returned {t.gameObject.name} to pool!"); });
+            _projectilePool.Release(
+                projectile,
+                (t) => { Debug.Log($"Returned {t.gameObject.name} to pool!"); });
         }
 
         private Enemy FindClosestTarget()
@@ -108,4 +141,3 @@ namespace Youregone.PlayerComponents
         }
     }
 }
-

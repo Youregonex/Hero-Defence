@@ -111,6 +111,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _moveSpeed: 2
   _maxHealth: 5
+  _damage: 1
   _rigidBody: {fileID: 0}
 --- !u!1 &9136207583340897231
 GameObject:

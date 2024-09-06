@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Youregone.HealthSystem
+namespace Youregone.HealthComponent
 {
     public class HealthSystem
     {

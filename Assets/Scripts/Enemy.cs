@@ -1,8 +1,8 @@
-﻿using UnityEngine;
+﻿using Youregone.HealthComponent;
+using UnityEngine;
 using System;
-using Youregone.HealthSystem;
 
-public class Enemy : MonoBehaviour, IDamageable
+public class Enemy : MonoBehaviour, IDamageable, IPauseable
 {
     public event Action<Enemy> OnDeath;
     public event Action<Enemy> OnEndReached;
@@ -10,6 +10,7 @@ public class Enemy : MonoBehaviour, IDamageable
     [Header("Enemy Config")]
     [SerializeField] private float _moveSpeed;
     [SerializeField] private int _maxHealth;
+    [SerializeField] private int _damage;
 
     [Header("Debug Fields")]
     [SerializeField] private Rigidbody2D _rigidBody;
@@ -17,6 +18,7 @@ public class Enemy : MonoBehaviour, IDamageable
     private bool _isInitialized = false;
     private HealthSystem _healthSystem;
 
+    public int Damage => _damage;
     public bool IsInitialized => _isInitialized;
 
     public void Initialize(Vector2 position)
@@ -49,6 +51,16 @@ public class Enemy : MonoBehaviour, IDamageable
     private void OnDisable()
     {
         _healthSystem.OnDeath -= HealthSystem_OnDeath;
+    }
+
+    public void Pause()
+    {
+        _rigidBody.velocity = Vector2.zero;
+    }
+
+    public void Unpause()
+    {
+        _rigidBody.velocity = Vector2.down * _moveSpeed;
     }
 
     public void TakeDamage(int damageAmount)

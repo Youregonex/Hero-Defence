@@ -1,11 +1,12 @@
 using System.Collections.Generic;
-using UnityEngine;
-using Youregone.Factories;
 using Youregone.ObjectPool;
+using Youregone.Factories;
+using UnityEngine;
+using Zenject;
 
 namespace Youregone.GameplaySystems
 {
-    public class EnemySpawner : MonoBehaviour
+    public class EnemySpawner : MonoBehaviour, IPauseable
     {
         [Header("Spawner Config")]
         [SerializeField] private List<Transform> _spawnPositions;
@@ -18,40 +19,39 @@ namespace Youregone.GameplaySystems
 
         [Header("Debug Fields")]
         [SerializeField] private List<Enemy> _activeEnemies = new();
-        [SerializeField] private bool _isInitialized = false;
-        [SerializeField] private float _nextEnemySpawnTimer;
+        [SerializeField] private float _enemySpawnTimerCurrent;
 
+        private PauseManager _pauseManager;
+        private GameState _gameState;
+        private bool _isPaused;
         private ObjectPool<Enemy> _enemyPool;
         private int _lastSpawnPointIndex;
 
-        public void Initialize()
+        [Inject]
+        public void Construct(PauseManager pauseManager, GameState gameState)
         {
-            if(_isInitialized)
-            {
-                Debug.LogError($"Tried to initialize EnemySpawner second time!");
-                return;
-            }
-
-            _isInitialized = true;
-            _enemyPool = new ObjectPool<Enemy>(new EnemyFactory(), _enemyParentPool);
-            _nextEnemySpawnTimer = UnityEngine.Random.Range(_enemySpawnTimerMin, _enemySpawnTimerMax);
+            _pauseManager = pauseManager;
+            _gameState = gameState;
         }
 
         private void Awake()
         {
-            Initialize();
+            _enemyPool = new ObjectPool<Enemy>(new EnemyFactory(), _enemyParentPool);
+            _enemySpawnTimerCurrent = UnityEngine.Random.Range(_enemySpawnTimerMin, _enemySpawnTimerMax);
+
+            _pauseManager.RegisterPausable(this);
         }
 
         private void Update()
         {
-            if (!_isInitialized)
+            if (_isPaused || _gameState.CurrentGameState != EGameState.Gameplay)
                 return;
 
-            if (_nextEnemySpawnTimer > 0)
-                _nextEnemySpawnTimer -= Time.deltaTime;
+            if (_enemySpawnTimerCurrent > 0)
+                _enemySpawnTimerCurrent -= Time.deltaTime;
             else
             {
-                _nextEnemySpawnTimer = UnityEngine.Random.Range(_enemySpawnTimerMin, _enemySpawnTimerMax);
+                _enemySpawnTimerCurrent = UnityEngine.Random.Range(_enemySpawnTimerMin, _enemySpawnTimerMax);
                 SpawnEnemy();
             }
         }
@@ -61,7 +61,27 @@ namespace Youregone.GameplaySystems
             foreach (Enemy enemy in _activeEnemies)
             {
                 enemy.OnDeath -= DespawnEnemy;
-                enemy.OnEndReached -= Enemy_OnEndReached;
+                enemy.OnEndReached -= DespawnEnemy;
+            }
+        }
+
+        public void Pause()
+        {
+            _isPaused = true;
+
+            foreach (var enemy in _activeEnemies)
+            {
+                enemy.Pause();
+            }
+        }
+
+        public void Unpause()
+        {
+            _isPaused = false;
+
+            foreach (var enemy in _activeEnemies)
+            {
+                enemy.Unpause();
             }
         }
 
@@ -71,13 +91,12 @@ namespace Youregone.GameplaySystems
 
             Enemy enemy = _enemyPool.Get(_enemyPrefabList[0], enemySpawnPosition);
             ActivateEnemy(enemy, enemySpawnPosition);
-            _activeEnemies.Add(enemy);
         }
 
         private void DespawnEnemy(Enemy enemy)
         {
             enemy.OnDeath -= DespawnEnemy;
-            enemy.OnEndReached -= Enemy_OnEndReached;
+            enemy.OnEndReached -= DespawnEnemy;
 
             _activeEnemies.Remove(enemy);
             _enemyPool.Release(enemy);
@@ -85,8 +104,10 @@ namespace Youregone.GameplaySystems
 
         private void ActivateEnemy(Enemy enemy, Vector2 spawnPosition)
         {
+            _activeEnemies.Add(enemy);
+
             enemy.OnDeath += DespawnEnemy;
-            enemy.OnEndReached += Enemy_OnEndReached;
+            enemy.OnEndReached += DespawnEnemy;
 
             if (enemy.IsInitialized)
                 enemy.RefreshEnemy(spawnPosition);
@@ -100,17 +121,17 @@ namespace Youregone.GameplaySystems
 
             if (currentSpawnPositionIndex == _lastSpawnPointIndex)
             {
-                int positionCalculationsAmount = 0;
-                int maxPositionCalculationAmount = 20;
+                int positionCalculationAmountCurrent = 0;
+                int positionCalculationAmountMax = 20;
 
                 while (currentSpawnPositionIndex == _lastSpawnPointIndex)
                 {
-                    positionCalculationsAmount++;
+                    positionCalculationAmountCurrent++;
                     currentSpawnPositionIndex = UnityEngine.Random.Range(0, _spawnPositions.Count);
 
-                    if (positionCalculationsAmount > maxPositionCalculationAmount)
+                    if (positionCalculationAmountCurrent > positionCalculationAmountMax)
                     {
-                        Debug.LogError($"Enemy spawn position calculation took more {maxPositionCalculationAmount} attempts!");
+                        Debug.LogError($"Enemy spawn position calculation took more than {positionCalculationAmountMax} attempts!");
                         break;
                     }
                 }
@@ -120,11 +141,6 @@ namespace Youregone.GameplaySystems
             _lastSpawnPointIndex = currentSpawnPositionIndex;
 
             return enemySpawnPosition;
-        }
-
-        private void Enemy_OnEndReached(Enemy enemy)
-        {
-            DespawnEnemy(enemy);
         }
     }
 }

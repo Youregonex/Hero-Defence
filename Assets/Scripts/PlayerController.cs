@@ -1,8 +1,10 @@
+using Youregone.GameplaySystems;
 using UnityEngine;
+using Zenject;
 
 namespace Youregone.PlayerComponents
 {
-    public class PlayerController : MonoBehaviour
+    public class PlayerController : MonoBehaviour, IPauseable
     {
         [Header("Movement Config")]
         [SerializeField] private float _moveSpeed = 10f;
@@ -10,6 +12,14 @@ namespace Youregone.PlayerComponents
         private Rigidbody2D _rigidBody;
         private PlayerInputActions _playerInputActions;
         private Vector2 _lastMovementDirection;
+        private bool _isPaused;
+        private PauseManager _pauseManager;
+
+        [Inject]
+        public void Construct(PauseManager pauseManager)
+        {
+            _pauseManager = pauseManager;
+        }
 
         private void Awake()
         {
@@ -17,13 +27,26 @@ namespace Youregone.PlayerComponents
                 _playerInputActions = new PlayerInputActions();
 
             _playerInputActions.Enable();
-
             _rigidBody = GetComponent<Rigidbody2D>();
+            _pauseManager.RegisterPausable(this);
         }
 
         private void FixedUpdate()
         {
+            if (_isPaused)
+                return;
+
             MovePlayer();
+        }
+
+        public void Pause()
+        {
+            _isPaused = true;
+        }
+
+        public void Unpause()
+        {
+            _isPaused = false;
         }
 
         private void MovePlayer()
